@@ -79,101 +79,156 @@ Return ONLY this JSON structure, nothing else:
 
 function formatEmail(debate, siteUrl) {
   const domain = new URL(siteUrl).hostname
-  return `
-<!DOCTYPE html>
+  const survivedItems = debate.verdict_survived.map(s =>
+    `<tr><td style="padding:8px 0 8px 20px;border-bottom:1px solid #2a2a2a;font-size:14px;line-height:1.6;color:#e0e0e0;font-family:Georgia,serif">&#10003; ${s}</td></tr>`
+  ).join('')
+  const exposedItems = debate.verdict_exposed.map(e =>
+    `<tr><td style="padding:8px 0 8px 20px;border-bottom:1px solid #2a2a2a;font-size:14px;line-height:1.6;color:#e0e0e0;font-family:Georgia,serif">&#9888; ${e}</td></tr>`
+  ).join('')
+  const recItems = debate.recommendations.map(r =>
+    `<tr><td style="padding:8px 0 8px 20px;border-bottom:1px solid #2a2a2a;font-size:14px;line-height:1.6;color:#e0e0e0;font-family:Georgia,serif">&#8594; ${r}</td></tr>`
+  ).join('')
+
+  return `<!DOCTYPE html>
 <html>
 <head>
-  <style>
-    body { background: #0D0D0D; color: #F5F4F0; font-family: Georgia, serif; margin: 0; padding: 0; }
-    .container { max-width: 680px; margin: 0 auto; padding: 40px 24px; }
-    .header { border-bottom: 1px solid #C9A84C; padding-bottom: 24px; margin-bottom: 32px; }
-    .brand { font-size: 24px; color: #C9A84C; letter-spacing: 0.1em; }
-    .domain { font-size: 13px; color: #888; margin-top: 4px; }
-    .verdict-section { background: #1a1a1a; border-left: 3px solid #C9A84C; padding: 24px; margin-bottom: 32px; border-radius: 4px; }
-    .verdict-title { font-size: 11px; letter-spacing: 0.15em; color: #C9A84C; margin-bottom: 16px; }
-    .verdict-list { list-style: none; padding: 0; margin: 0; }
-    .verdict-list li { padding: 8px 0; border-bottom: 1px solid #2a2a2a; font-size: 14px; line-height: 1.6; }
-    .verdict-list li:last-child { border-bottom: none; }
-    .survived li::before { content: "\\2713 "; color: #4CAF50; }
-    .exposed li::before { content: "\\26A0 "; color: #E88C30; }
-    .recs li::before { content: "\\2192 "; color: #C9A84C; }
-    .debate-section { margin-top: 40px; border-top: 1px solid #2a2a2a; padding-top: 32px; }
-    .debate-title { font-size: 11px; letter-spacing: 0.15em; color: #888; margin-bottom: 24px; }
-    .round { margin-bottom: 24px; }
-    .speaker { font-size: 11px; letter-spacing: 0.1em; margin-bottom: 8px; }
-    .advocate-label { color: #4CAF50; }
-    .antagonist-label { color: #E88C30; }
-    .speech { font-size: 14px; line-height: 1.8; color: #ccc; border-left: 2px solid #2a2a2a; padding-left: 16px; }
-    .footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid #2a2a2a; font-size: 12px; color: #555; }
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="brand">ALVIEN</div>
-      <div class="domain">Report for ${domain}</div>
-    </div>
+<body style="margin:0;padding:0;background:#0D0D0D">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#0D0D0D">
+    <tr>
+      <td align="center" style="padding:40px 16px">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px">
 
-    <div class="verdict-section">
-      <div class="verdict-title">WHAT SURVIVED THE PRESSURE TEST</div>
-      <ul class="verdict-list survived">
-        ${debate.verdict_survived.map(s => `<li>${s}</li>`).join('')}
-      </ul>
-    </div>
+          <tr>
+            <td style="border-bottom:1px solid #C9A84C;padding-bottom:24px">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:24px;color:#C9A84C;letter-spacing:0.1em">ALVIEN</td>
+                </tr>
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:13px;color:#888;padding-top:4px">Report for ${domain}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-    <div class="verdict-section">
-      <div class="verdict-title">STILL EXPOSED</div>
-      <ul class="verdict-list exposed">
-        ${debate.verdict_exposed.map(e => `<li>${e}</li>`).join('')}
-      </ul>
-    </div>
+          <tr>
+            <td style="background:#1a1a1a;border-left:3px solid #C9A84C;padding:24px;margin:32px 0;display:block">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.15em;color:#C9A84C;padding-bottom:16px">WHAT SURVIVED THE PRESSURE TEST</td>
+                </tr>
+              </table>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                ${survivedItems}
+              </table>
+            </td>
+          </tr>
 
-    <div class="verdict-section">
-      <div class="verdict-title">TOP RECOMMENDATIONS</div>
-      <ul class="verdict-list recs">
-        ${debate.recommendations.map(r => `<li>${r}</li>`).join('')}
-      </ul>
-    </div>
+          <tr>
+            <td style="background:#1a1a1a;border-left:3px solid #C9A84C;padding:24px;margin:32px 0;display:block">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.15em;color:#C9A84C;padding-bottom:16px">STILL EXPOSED</td>
+                </tr>
+              </table>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                ${exposedItems}
+              </table>
+            </td>
+          </tr>
 
-    <div class="debate-section">
-      <div class="debate-title">FULL DEBATE TRANSCRIPT</div>
+          <tr>
+            <td style="background:#1a1a1a;border-left:3px solid #C9A84C;padding:24px;margin:32px 0;display:block">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.15em;color:#C9A84C;padding-bottom:16px">TOP RECOMMENDATIONS</td>
+                </tr>
+              </table>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                ${recItems}
+              </table>
+            </td>
+          </tr>
 
-      <div class="round">
-        <div class="speaker advocate-label">ADVOCATE — OPENING</div>
-        <div class="speech">${debate.advocate_opening}</div>
-      </div>
+          <tr>
+            <td style="border-top:1px solid #2a2a2a;padding-top:32px;margin-top:40px;display:block">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.15em;color:#888;padding-bottom:24px">FULL DEBATE TRANSCRIPT</td>
+                </tr>
+              </table>
 
-      <div class="round">
-        <div class="speaker antagonist-label">ANTAGONIST — ROUND 1</div>
-        <div class="speech">${debate.antagonist_round1}</div>
-      </div>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#4CAF50;padding-bottom:8px">ADVOCATE — OPENING</td>
+                </tr>
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.advocate_opening}</td>
+                </tr>
+              </table>
 
-      <div class="round">
-        <div class="speaker advocate-label">ADVOCATE — REBUTTAL</div>
-        <div class="speech">${debate.advocate_rebuttal}</div>
-      </div>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#E88C30;padding-bottom:8px">ANTAGONIST — ROUND 1</td>
+                </tr>
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.antagonist_round1}</td>
+                </tr>
+              </table>
 
-      <div class="round">
-        <div class="speaker antagonist-label">ANTAGONIST — ROUND 2</div>
-        <div class="speech">${debate.antagonist_round2}</div>
-      </div>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#4CAF50;padding-bottom:8px">ADVOCATE — REBUTTAL</td>
+                </tr>
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.advocate_rebuttal}</td>
+                </tr>
+              </table>
 
-      <div class="round">
-        <div class="speaker advocate-label">ADVOCATE — FINAL</div>
-        <div class="speech">${debate.advocate_final}</div>
-      </div>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#E88C30;padding-bottom:8px">ANTAGONIST — ROUND 2</td>
+                </tr>
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.antagonist_round2}</td>
+                </tr>
+              </table>
 
-      <div class="round">
-        <div class="speaker antagonist-label">ANTAGONIST — FINAL</div>
-        <div class="speech">${debate.antagonist_final}</div>
-      </div>
-    </div>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#4CAF50;padding-bottom:8px">ADVOCATE — FINAL</td>
+                </tr>
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.advocate_final}</td>
+                </tr>
+              </table>
 
-    <div class="footer">
-      Generated by Alvien — AI Business Intelligence for Agencies<br>
-      alvien.ai
-    </div>
-  </div>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#E88C30;padding-bottom:8px">ANTAGONIST — FINAL</td>
+                </tr>
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.antagonist_final}</td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding-top:24px;margin-top:48px;border-top:1px solid #2a2a2a;font-family:Georgia,serif;font-size:12px;color:#555">
+              Generated by Alvien — AI Business Intelligence for Agencies<br>
+              alvien.ai
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>`
 }
