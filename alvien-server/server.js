@@ -8,7 +8,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 const resend = new Resend(process.env.RESEND_API_KEY)
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
-async function scrapeSite(url) {
+async function scrapeSinglePage(url) {
   const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
     method: 'POST',
     headers: {
@@ -22,11 +22,32 @@ async function scrapeSite(url) {
     })
   })
   const data = await res.json()
-  if (!data.success) throw new Error('Firecrawl failed')
+  if (!data.success) return null
   return data.data.markdown
 }
 
-async function runDebate(siteContent, siteUrl) {
+async function scrapePages(baseUrl) {
+  const urls = [baseUrl]
+  const paths = ['/about', '/pricing', '/blog']
+  for (const p of paths) {
+    try {
+      const u = new URL(p, baseUrl)
+      if (u.href !== baseUrl) urls.push(u.href)
+    } catch {}
+  }
+  const results = await Promise.allSettled(urls.map(url => scrapeSinglePage(url)))
+  let combined = ''
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i]
+    if (r.status === 'fulfilled' && r.value) {
+      combined += `\n## PAGE: ${urls[i]}\n${r.value}\n`
+    }
+  }
+  if (!combined) throw new Error('Firecrawl failed for all pages')
+  return combined
+}
+
+async function runDebate(siteContent, siteUrl, competitorContent) {
   const completion = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     temperature: 0.7,
@@ -49,7 +70,12 @@ Voice rules:
 URL: ${siteUrl}
 
 SITE CONTENT:
-${siteContent.slice(0, 6000)}
+${siteContent.slice(0, 8000)}
+${competitorContent ? `
+COMPETITOR REFERENCE:
+${competitorContent.slice(0, 3000)}
+
+The user wants to understand how they compare to this competitor. Include a competitive assessment in the antagonist rounds and differentiation verdict.` : ''}
 
 Run a 3-round pressure test between a Protagonist and an Antagonist (YC partner voice), then deliver a structured verdict.
 
@@ -65,6 +91,7 @@ The Antagonist (Garry Tan / YC partner) pushes on the six YC forcing questions:
 
 Return ONLY this JSON structure, exactly:
 {
+  "executive_summary": "One-paragraph bottom line — should they worry? What survived, what's exposed, what to do. Write this as a partner speaking directly to the founder.",
   "protagonist_opening": "Extract and build the site's strongest claims — positioning, target, value prop, traction, trust signals",
   "antagonist_demand": "YC partner diagnosis of the demand evidence gap — what's real vs what's assumed",
   "protagonist_rebuttal": "Defend with specific site evidence the antagonist missed",
@@ -117,6 +144,16 @@ function formatEmail(debate, siteUrl) {
                 </tr>
                 <tr>
                   <td style="font-family:Georgia,serif;font-size:13px;color:#888;padding-top:4px">Pressure test for ${domain}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="border-left:3px solid #C9A84C;padding:0 0 24px 24px;margin:24px 0 32px;display:block">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#e0e0e0;font-style:italic">${debate.executive_summary}</td>
                 </tr>
               </table>
             </td>
@@ -277,12 +314,15 @@ async function sendReport(customerEmail, debate, siteUrl) {
   })
 }
 
-async function runPipeline(customerEmail, websiteUrl) {
+async function runPipeline(customerEmail, websiteUrl, competitorUrl) {
   try {
     console.log(`Starting pipeline for ${customerEmail} — ${websiteUrl}`)
-    const siteContent = await scrapeSite(websiteUrl)
-    console.log('Scrape complete')
-    const debate = await runDebate(siteContent, websiteUrl)
+    const [siteContent, competitorContent] = await Promise.all([
+      scrapePages(websiteUrl),
+      competitorUrl ? scrapeSinglePage(competitorUrl) : Promise.resolve(null)
+    ])
+    console.log('Scrape complete' + (competitorContent ? ' (with competitor)' : ''))
+    const debate = await runDebate(siteContent, websiteUrl, competitorContent)
     console.log('Debate complete')
     await sendReport(customerEmail, debate, websiteUrl)
     console.log('Report sent to', customerEmail)
@@ -325,11 +365,15 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   if (websiteUrl && !websiteUrl.startsWith('http')) {
     websiteUrl = 'https://' + websiteUrl
   }
+  let competitorUrl = customFields.find(f => f.key === 'competitorurl')?.text?.value
+  if (competitorUrl && !competitorUrl.startsWith('http')) {
+    competitorUrl = 'https://' + competitorUrl
+  }
 
   res.status(200).send('OK')
 
   if (customerEmail && websiteUrl) {
-    runPipeline(customerEmail, websiteUrl)
+    runPipeline(customerEmail, websiteUrl, competitorUrl)
   }
 })
 
