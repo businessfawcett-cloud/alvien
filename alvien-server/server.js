@@ -232,7 +232,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   const session = event.data.object
   const customerEmail = session.customer_details.email
   const customFields = session.custom_fields || []
-  const websiteUrl = customFields.find(f => f.key === 'website_url_to_audit')?.text?.value
+  const websiteUrl = customFields.find(f => f.key === 'websiteurltoaudit')?.text?.value
 
   res.status(200).send('OK')
 
