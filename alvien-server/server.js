@@ -34,34 +34,48 @@ async function runDebate(siteContent, siteUrl) {
     messages: [
       {
         role: 'system',
-        content: `You are a business strategy debate engine. You output only valid JSON, no markdown, no explanation, no backticks.`
+        content: `You are a YC office-hours partner analyzing a website. You output only valid JSON, no markdown, no explanation, no backticks.
+
+Voice rules:
+- Direct to the point of discomfort. Short sentences. Active voice.
+- No corporate language. No "it appears that," "one might consider," "it could be argued."
+- Name failure patterns when you see them: "solution in search of a problem," "interest is not demand," "wedge too wide."
+- Push once, then push again. The first answer is the polished version.`
       },
       {
         role: 'user',
-        content: `Analyze this website and run a structured pressure test debate.
+        content: `Analyze this website as if you are Garry Tan running YC office hours on the business behind it.
 
 URL: ${siteUrl}
 
 SITE CONTENT:
 ${siteContent.slice(0, 6000)}
 
-Run a 3-round debate between an Advocate and an Antagonist then deliver a verdict.
+Run a 3-round pressure test between a Protagonist and an Antagonist (YC partner voice), then deliver a structured verdict.
 
-The Advocate builds the strongest possible case for this business: positioning, value prop, target market, trust signals, conversion strength.
+The Protagonist extracts everything the site claims and builds the strongest possible case — positioning, value prop, target user, traction signals, trust elements, conversion strength.
 
-The Antagonist attacks like a skeptical investor: challenges differentiation, market size, pricing logic, messaging clarity, missing proof points.
+The Antagonist (Garry Tan / YC partner) pushes on the six YC forcing questions:
+- Demand Reality: What evidence exists that someone actually needs this? Not interest. Not waitlists. Behavior that proves it.
+- Status Quo: What were they doing before this? What does that workaround cost them in time, money, or frustration?
+- Specific User: Name the actual human. What's their title? What gets them promoted? What gets them fired?
+- Wedge: What's the smallest version someone would pay for this week? Not the platform — the wedge.
+- Observation: What would watching a user reveal that the site claims don't show?
+- Future Fit: If the world changes, does this become more essential or less?
 
-Return ONLY this JSON structure, nothing else:
+Return ONLY this JSON structure, exactly:
 {
-  "advocate_opening": "string",
-  "antagonist_round1": "string",
-  "advocate_rebuttal": "string",
-  "antagonist_round2": "string",
-  "advocate_final": "string",
-  "antagonist_final": "string",
-  "verdict_survived": ["string", "string", "string"],
-  "verdict_exposed": ["string", "string", "string"],
-  "recommendations": ["string", "string", "string"]
+  "protagonist_opening": "Extract and build the site's strongest claims — positioning, target, value prop, traction, trust signals",
+  "antagonist_demand": "YC partner diagnosis of the demand evidence gap — what's real vs what's assumed",
+  "protagonist_rebuttal": "Defend with specific site evidence the antagonist missed",
+  "antagonist_status_quo": "YC partner on the real competitor (the workaround) and what it costs the user",
+  "protagonist_final": "The final case for this business based on everything the site reveals",
+  "antagonist_wedge": "YC partner on who specifically needs this and what the smallest version worth paying for actually is",
+  "verdict_demand_risk": "Assessment of whether the site proves real demand vs hypothetical interest. 2-3 sentences.",
+  "verdict_wedge_risk": "Assessment of how clearly the site defines its specific user and the smallest valuable offer. 2-3 sentences.",
+  "verdict_status_quo_risk": "Assessment of whether the problem is painful enough to act on. 2-3 sentences.",
+  "verdict_differentiation_risk": "Assessment of how the site differentiates from the workaround and alternatives. 2-3 sentences.",
+  "recommendations": ["Actionable recommendation based on site content", "Second recommendation", "Third recommendation"]
 }`
       }
     ]
@@ -79,12 +93,6 @@ Return ONLY this JSON structure, nothing else:
 
 function formatEmail(debate, siteUrl) {
   const domain = new URL(siteUrl).hostname
-  const survivedItems = debate.verdict_survived.map(s =>
-    `<tr><td style="padding:8px 0 8px 20px;border-bottom:1px solid #2a2a2a;font-size:14px;line-height:1.6;color:#e0e0e0;font-family:Georgia,serif">&#10003; ${s}</td></tr>`
-  ).join('')
-  const exposedItems = debate.verdict_exposed.map(e =>
-    `<tr><td style="padding:8px 0 8px 20px;border-bottom:1px solid #2a2a2a;font-size:14px;line-height:1.6;color:#e0e0e0;font-family:Georgia,serif">&#9888; ${e}</td></tr>`
-  ).join('')
   const recItems = debate.recommendations.map(r =>
     `<tr><td style="padding:8px 0 8px 20px;border-bottom:1px solid #2a2a2a;font-size:14px;line-height:1.6;color:#e0e0e0;font-family:Georgia,serif">&#8594; ${r}</td></tr>`
   ).join('')
@@ -105,10 +113,10 @@ function formatEmail(debate, siteUrl) {
             <td style="border-bottom:1px solid #C9A84C;padding-bottom:24px">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td style="font-family:Georgia,serif;font-size:24px;color:#C9A84C;letter-spacing:0.1em">ALVIEN</td>
+                  <td style="font-family:Georgia,serif;font-size:24px;color:#C9A84C;letter-spacing:0.1em">ALVIEN — YC OFFICE HOURS REPORT</td>
                 </tr>
                 <tr>
-                  <td style="font-family:Georgia,serif;font-size:13px;color:#888;padding-top:4px">Report for ${domain}</td>
+                  <td style="font-family:Georgia,serif;font-size:13px;color:#888;padding-top:4px">Pressure test for ${domain}</td>
                 </tr>
               </table>
             </td>
@@ -118,11 +126,11 @@ function formatEmail(debate, siteUrl) {
             <td style="background:#1a1a1a;border-left:3px solid #C9A84C;padding:24px;margin:32px 0;display:block">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.15em;color:#C9A84C;padding-bottom:16px">WHAT SURVIVED THE PRESSURE TEST</td>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.15em;color:#C9A84C;padding-bottom:8px">DEMAND RISK</td>
                 </tr>
-              </table>
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-                ${survivedItems}
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.7;color:#e0e0e0">${debate.verdict_demand_risk}</td>
+                </tr>
               </table>
             </td>
           </tr>
@@ -131,11 +139,11 @@ function formatEmail(debate, siteUrl) {
             <td style="background:#1a1a1a;border-left:3px solid #C9A84C;padding:24px;margin:32px 0;display:block">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.15em;color:#C9A84C;padding-bottom:16px">STILL EXPOSED</td>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.15em;color:#C9A84C;padding-bottom:8px">WEDGE RISK</td>
                 </tr>
-              </table>
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
-                ${exposedItems}
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.7;color:#e0e0e0">${debate.verdict_wedge_risk}</td>
+                </tr>
               </table>
             </td>
           </tr>
@@ -144,7 +152,33 @@ function formatEmail(debate, siteUrl) {
             <td style="background:#1a1a1a;border-left:3px solid #C9A84C;padding:24px;margin:32px 0;display:block">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.15em;color:#C9A84C;padding-bottom:16px">TOP RECOMMENDATIONS</td>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.15em;color:#C9A84C;padding-bottom:8px">STATUS QUO RISK</td>
+                </tr>
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.7;color:#e0e0e0">${debate.verdict_status_quo_risk}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:#1a1a1a;border-left:3px solid #C9A84C;padding:24px;margin:32px 0;display:block">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.15em;color:#C9A84C;padding-bottom:8px">DIFFERENTIATION RISK</td>
+                </tr>
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.7;color:#e0e0e0">${debate.verdict_differentiation_risk}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:#1a1a1a;border-left:3px solid #C9A84C;padding:24px;margin:32px 0;display:block">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.15em;color:#C9A84C;padding-bottom:16px">RECOMMENDATIONS</td>
                 </tr>
               </table>
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -163,55 +197,55 @@ function formatEmail(debate, siteUrl) {
 
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
                 <tr>
-                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#4CAF50;padding-bottom:8px">ADVOCATE — OPENING</td>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#4CAF50;padding-bottom:8px">PROTAGONIST — OPENING CASE</td>
                 </tr>
                 <tr>
-                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.advocate_opening}</td>
-                </tr>
-              </table>
-
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
-                <tr>
-                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#E88C30;padding-bottom:8px">ANTAGONIST — ROUND 1</td>
-                </tr>
-                <tr>
-                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.antagonist_round1}</td>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.protagonist_opening}</td>
                 </tr>
               </table>
 
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
                 <tr>
-                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#4CAF50;padding-bottom:8px">ADVOCATE — REBUTTAL</td>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#E88C30;padding-bottom:8px">ANTAGONIST (YC PARTNER) — DEMAND CHALLENGE</td>
                 </tr>
                 <tr>
-                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.advocate_rebuttal}</td>
-                </tr>
-              </table>
-
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
-                <tr>
-                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#E88C30;padding-bottom:8px">ANTAGONIST — ROUND 2</td>
-                </tr>
-                <tr>
-                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.antagonist_round2}</td>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.antagonist_demand}</td>
                 </tr>
               </table>
 
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
                 <tr>
-                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#4CAF50;padding-bottom:8px">ADVOCATE — FINAL</td>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#4CAF50;padding-bottom:8px">PROTAGONIST — REBUTTAL</td>
                 </tr>
                 <tr>
-                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.advocate_final}</td>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.protagonist_rebuttal}</td>
                 </tr>
               </table>
 
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
                 <tr>
-                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#E88C30;padding-bottom:8px">ANTAGONIST — FINAL</td>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#E88C30;padding-bottom:8px">ANTAGONIST (YC PARTNER) — STATUS QUO CHALLENGE</td>
                 </tr>
                 <tr>
-                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.antagonist_final}</td>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.antagonist_status_quo}</td>
+                </tr>
+              </table>
+
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#4CAF50;padding-bottom:8px">PROTAGONIST — FINAL CASE</td>
+                </tr>
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.protagonist_final}</td>
+                </tr>
+              </table>
+
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom:24px">
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.1em;color:#E88C30;padding-bottom:8px">ANTAGONIST (YC PARTNER) — WEDGE VERDICT</td>
+                </tr>
+                <tr>
+                  <td style="font-family:Georgia,serif;font-size:14px;line-height:1.8;color:#ccc;border-left:2px solid #2a2a2a;padding-left:16px">${debate.antagonist_wedge}</td>
                 </tr>
               </table>
 
