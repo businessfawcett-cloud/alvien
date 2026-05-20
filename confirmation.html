@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report Generating — Alvien</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0D0D0D;
+      --text: #F5F4F0;
+      --accent: #C9A84C;
+      --muted: rgba(245, 244, 240, 0.55);
+      --line: rgba(245, 244, 240, 0.08);
+    }
+
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Montserrat', 'Helvetica Neue', sans-serif;
+      font-weight: 300;
+      line-height: 1.7;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 0 32px;
+      text-align: center;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.25rem;
+      font-weight: 600;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    .rule {
+      width: 48px;
+      height: 2px;
+      background: var(--accent);
+      margin: 0 auto 28px;
+    }
+
+    p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 40px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-bottom: 12px;
+      text-align: left;
+    }
+
+    .email-row {
+      display: flex;
+      gap: 0;
+    }
+
+    input[type="email"] {
+      flex: 1;
+      background: transparent;
+      border: 1px solid rgba(201, 168, 76, 0.35);
+      border-right: none;
+      padding: 14px 16px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.85rem;
+      color: var(--text);
+      outline: none;
+    }
+
+    input[type="email"]::placeholder {
+      color: var(--muted);
+    }
+
+    .email-row button {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      padding: 14px 24px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: var(--bg);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+    }
+
+    .email-row button:hover { opacity: 0.85; }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 40px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .back-link:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Your report is being generated.</h1>
+    <div class="rule"></div>
+    <p>You'll receive it by email within 10 minutes. Check your inbox.</p>
+    <form>
+      <label for="email">Confirm your email</label>
+      <div class="email-row">
+        <input type="email" id="email" name="email" placeholder="you@agency.com" required>
+        <button type="submit">Submit</button>
+      </div>
+    </form>
+    <a href="index.html" class="back-link">&larr; Back to Alvien</a>
+  </div>
+</body>
+</html>

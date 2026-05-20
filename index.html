@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alvien — AI Business Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0D0D0D;
+      --text: #F5F4F0;
+      --accent: #C9A84C;
+      --muted: rgba(245, 244, 240, 0.55);
+      --line: rgba(245, 244, 240, 0.08);
+    }
+
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Montserrat', 'Helvetica Neue', sans-serif;
+      font-weight: 300;
+      line-height: 1.7;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Playfair Display', 'Georgia', serif;
+      font-weight: 600;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { opacity: 0.8; }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 48px;
+    }
+
+    /* ---- Navigation ---- */
+    nav {
+      padding: 32px 0 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    nav .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.625rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--text);
+    }
+
+    .logo span { color: var(--accent); }
+
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      list-style: none;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .nav-links a { color: var(--muted); transition: color 0.2s; }
+    .nav-links a:hover { color: var(--text); opacity: 1; }
+
+    /* ---- Hero ---- */
+    .hero {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      padding: 120px 0 100px;
+    }
+
+    .hero-content { max-width: 840px; }
+
+    .hero-kicker {
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-size: 4rem;
+      font-weight: 700;
+      margin-bottom: 28px;
+    }
+
+    .hero p {
+      font-size: 1.125rem;
+      color: var(--muted);
+      max-width: 640px;
+      margin-bottom: 48px;
+    }
+
+    .hero-rule {
+      width: 60px;
+      height: 2px;
+      background: var(--accent);
+      margin-bottom: 48px;
+    }
+
+    .btn {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      padding: 14px 36px;
+      border: 1.5px solid var(--accent);
+      color: var(--accent);
+      background: transparent;
+      transition: background 0.25s, color 0.25s;
+    }
+
+    .btn:hover { background: var(--accent); color: var(--bg); opacity: 1; }
+
+    /* ---- Capabilities ---- */
+    .capabilities {
+      padding: 100px 0 120px;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      margin-bottom: 56px;
+    }
+
+    .cap-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 64px;
+    }
+
+    .cap-item h3 {
+      font-size: 1.25rem;
+      margin-bottom: 12px;
+    }
+
+    .cap-item p {
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    .cap-item .cap-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.75rem;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    /* ---- Pull Quote ---- */
+    .pull-quote {
+      padding: 160px 0;
+      border-top: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .pull-quote blockquote {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.25rem;
+      font-weight: 400;
+      font-style: italic;
+      line-height: 1.4;
+      color: var(--text);
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    /* ---- For Agencies ---- */
+    .for-agencies {
+      padding: 120px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .agencies-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: start;
+    }
+
+    .agencies-left .section-label {
+      margin-bottom: 28px;
+    }
+
+    .agencies-left h2 {
+      font-size: 2.25rem;
+      margin-bottom: 24px;
+    }
+
+    .agencies-left p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      max-width: 460px;
+    }
+
+    .agencies-list {
+      list-style: none;
+      padding-top: 8px;
+    }
+
+    .agencies-list li {
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: rgba(201, 168, 76, 0.85);
+      padding: 20px 0;
+      border-bottom: 1px solid rgba(201, 168, 76, 0.25);
+    }
+
+    .agencies-list li:first-child {
+      border-top: 1px solid rgba(201, 168, 76, 0.25);
+    }
+
+    /* ---- Pricing ---- */
+    .pricing {
+      padding: 120px 0;
+      border-top: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .pricing-heading {
+      font-size: 2.25rem;
+      margin-bottom: 12px;
+    }
+
+    .pricing-subheading {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 64px;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      align-items: start;
+      margin-bottom: 48px;
+    }
+
+    .pricing-card {
+      background: var(--bg);
+      border: 1px solid rgba(201, 168, 76, 0.35);
+      padding: 48px 36px;
+      text-align: left;
+      position: relative;
+    }
+
+    .pricing-card.featured {
+      border: 2px solid var(--accent);
+    }
+
+    .pricing-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg);
+      color: var(--accent);
+      font-size: 0.6rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      padding: 4px 16px;
+      border: 1px solid var(--accent);
+      white-space: nowrap;
+    }
+
+    .pricing-card .plan-name {
+      font-size: 0.7rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .pricing-card .price {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .pricing-card .price-period {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    .pricing-card .price-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    .pricing-card ul {
+      list-style: none;
+      margin-bottom: 36px;
+    }
+
+    .pricing-card ul li {
+      font-size: 0.8rem;
+      color: var(--text);
+      padding: 8px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .pricing-card ul li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 15px;
+      width: 6px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .pricing-card .btn {
+      width: 100%;
+      text-align: center;
+    }
+
+    .pricing-card .btn-filled {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      padding: 14px 36px;
+      text-align: center;
+      border: 1.5px solid var(--accent);
+      background: var(--accent);
+      color: var(--bg);
+      transition: opacity 0.25s;
+    }
+
+    .pricing-card .btn-filled:hover { opacity: 0.9; box-shadow: 0 0 24px rgba(201, 168, 76, 0.25); }
+
+    .pricing-footnote {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* ---- Footer ---- */
+    footer {
+      border-top: 1px solid rgba(201, 168, 76, 0.4);
+      padding: 48px 0;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    footer .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    footer .footer-brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    footer .footer-tagline {
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    footer .footer-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+
+    footer .footer-links a {
+      font-size: 0.7rem;
+      color: var(--muted);
+      transition: color 0.2s;
+    }
+
+    footer .footer-links a:hover { color: var(--text); }
+
+    footer .footer-copy {
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 768px) {
+      .container { padding: 0 24px; }
+      .hero { padding: 80px 0 60px; }
+      .hero h1 { font-size: 2.5rem; }
+      .cap-grid { grid-template-columns: 1fr; gap: 40px; }
+      .pricing-grid { grid-template-columns: 1fr; gap: 24px; }
+      .pricing-card.featured { order: -1; }
+      nav .container { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .nav-links { gap: 24px; }
+      .pull-quote blockquote { font-size: 1.5rem; }
+      .agencies-layout { grid-template-columns: 1fr; gap: 48px; }
+      .agencies-left h2 { font-size: 1.75rem; }
+      footer .container { flex-direction: column; gap: 16px; align-items: flex-start; }
+      footer .footer-links { flex-direction: column; gap: 10px; }
+    }
+
+    @media (max-width: 480px) {
+      .hero h1 { font-size: 2rem; }
+      .nav-links { flex-wrap: wrap; gap: 16px; }
+      .pull-quote { padding: 100px 0; }
+      .pull-quote blockquote { font-size: 1.25rem; }
+      .pricing-card { padding: 36px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <div class="logo">Alvien</div>
+      <ul class="nav-links">
+        <li><a href="#">How It Works</a></li>
+        <li><a href="#">For Agencies</a></li>
+        <li><a href="#">Get a Report</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="container hero-content">
+      <div class="hero-kicker">AI Business Intelligence</div>
+      <h1>Your business,<br>pressure tested.</h1>
+      <div class="hero-rule"></div>
+      <p>Alvien crawls your site, argues both sides, and delivers a consulting-grade report that survives scrutiny.</p>
+          <a href="https://buy.stripe.com/test_28EcN7eabg8neMj9bMgA800" class="btn">Run Your First Report</a>
+        </div>
+
+        <div class="pricing-card featured">
+          <span class="pricing-badge">Most Popular</span>
+          <div class="plan-name">Agency Plan</div>
+          <div class="price">$497</div>
+          <div class="price-period">per month</div>
+          <p class="price-desc">Run Alvien on every client, every month. The agencies who win pitches use this before every strategy call.</p>
+          <ul>
+            <li>Up to 10 reports per month</li>
+            <li>Priority delivery</li>
+            <li>White-label branding</li>
+            <li>Cancel anytime</li>
+          </ul>
+          <a href="https://buy.stripe.com/test_6oUaEZaXZ2hxeMj9bMgA802" class="btn-filled">Start Free Trial</a>
+        </div>
+
+        <div class="pricing-card">
+          <div class="plan-name">Cohort Plan</div>
+          <div class="price">$997</div>
+          <div class="price-period">per month</div>
+          <p class="price-desc">Built for accelerators and agency groups running multiple cohorts. One plan covers your entire portfolio.</p>
+          <ul>
+            <li>Up to 50 reports per month</li>
+            <li>Dedicated onboarding</li>
+            <li>Custom report branding</li>
+            <li>Direct support</li>
+          </ul>
+          <a href="https://buy.stripe.com/test_9B63cx7LNaO3dIf2NogA801" class="btn">Talk to Us</a>
+        </div>
+
+      </div>
+
+      <p class="pricing-footnote">Every plan includes the full advocate vs antagonist debate engine. No feature gating.</p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div>
+        <div class="footer-brand">Alvien</div>
+        <div class="footer-tagline">AI business intelligence for agencies.</div>
+      </div>
+      <ul class="footer-links">
+        <li><a href="#">How it works</a></li>
+        <li><a href="#">For agencies</a></li>
+        <li><a href="#">Get a report</a></li>
+      </ul>
+      <div class="footer-copy">&copy; 2026 Alvien. All rights reserved.</div>
+    </div>
+  </footer>
+
+</body>
+</html>
