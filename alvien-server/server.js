@@ -321,19 +321,33 @@ function formatEmail(debate, siteUrl, agencyName) {
 }
 
 async function generatePdfFromHtml(html) {
-  const res = await fetch('https://v2.api2pdf.com/chromium/pdf', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.API2PDF_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ html })
-  })
-  const data = await res.json()
-  const pdfUrl = data.pdf || data.FileUrl
+  const postController = new AbortController()
+  const postTimeout = setTimeout(() => postController.abort(), 30000)
+  let data
+  try {
+    const res = await fetch('https://v2.api2pdf.com/chromium/pdf', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.API2PDF_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ html }),
+      signal: postController.signal
+    })
+    data = await res.json()
+  } finally {
+    clearTimeout(postTimeout)
+  }
+  const pdfUrl = data.FileUrl
   if (!pdfUrl) throw new Error('Api2Pdf failed')
-  const pdfRes = await fetch(pdfUrl)
-  return Buffer.from(await pdfRes.arrayBuffer())
+  const dlController = new AbortController()
+  const dlTimeout = setTimeout(() => dlController.abort(), 30000)
+  try {
+    const pdfRes = await fetch(pdfUrl, { signal: dlController.signal })
+    return Buffer.from(await pdfRes.arrayBuffer())
+  } finally {
+    clearTimeout(dlTimeout)
+  }
 }
 
 async function sendReport(customerEmail, debate, siteUrl, agencyName) {
@@ -368,8 +382,28 @@ ${agencyName ? `<p style="font-size:12px;color:#C9A84C;margin-top:24px">Prepared
   })
 }
 
+const BLOCKED_DOMAINS = [
+  'amazon.com', 'apple.com', 'google.com', 'microsoft.com',
+  'facebook.com', 'youtube.com', 'wikipedia.org', 'amazonaws.com',
+  'canva.com', 'vercel.com', 'netlify.com', 'godaddy.com',
+  'wordpress.com', 'wix.com', 'squarespace.com',
+]
+
+function validateUrl(raw) {
+  let url = raw
+  if (!url.startsWith('http')) url = 'https://' + url
+  const parsed = new URL(url)
+  const domain = parsed.hostname.replace(/^www\./, '')
+  if (BLOCKED_DOMAINS.some(d => domain === d || domain.endsWith('.' + d))) {
+    throw new Error(`Domain ${domain} is not allowed`)
+  }
+  return url
+}
+
 async function runPipeline(customerEmail, websiteUrl, competitorUrl, agencyName) {
   try {
+    websiteUrl = validateUrl(websiteUrl)
+    if (competitorUrl) competitorUrl = validateUrl(competitorUrl)
     console.log(`Starting pipeline for ${customerEmail} — ${websiteUrl}`)
     const [siteContent, competitorContent] = await Promise.all([
       scrapePages(websiteUrl),
