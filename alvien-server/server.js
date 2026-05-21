@@ -3,51 +3,70 @@ import express from 'express'
 import Stripe from 'stripe'
 import { Resend } from 'resend'
 import Groq from 'groq-sdk'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
+import pg from 'pg'
 
 const app = express()
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 const resend = new Resend(process.env.RESEND_API_KEY)
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
-const CREDITS_FILE = './credits.json'
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+  max: 5
+})
 
-function loadCredits() {
-  if (!existsSync(CREDITS_FILE)) return {}
-  return JSON.parse(readFileSync(CREDITS_FILE, 'utf-8'))
+async function initDb() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS customers (
+      email TEXT PRIMARY KEY,
+      plan TEXT NOT NULL,
+      credits INTEGER NOT NULL DEFAULT 0,
+      subscription_id TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `)
+  console.log('Database initialized')
 }
 
-function saveCredits(store) {
-  writeFileSync(CREDITS_FILE, JSON.stringify(store, null, 2))
+async function assignCredits(email, plan, subscriptionId) {
+  await pool.query(
+    `INSERT INTO customers (email, plan, credits, subscription_id)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (email) DO UPDATE SET
+       plan = EXCLUDED.plan,
+       credits = EXCLUDED.credits,
+       subscription_id = EXCLUDED.subscription_id,
+       updated_at = NOW()`,
+    [email, plan, plan === 'cohort' ? 50 : 10, subscriptionId]
+  )
 }
 
-function assignCredits(email, plan, subscriptionId) {
-  const store = loadCredits()
-  store[email] = { credits: plan === 'cohort' ? 50 : 10, plan, subscriptionId }
-  saveCredits(store)
+async function deductCredit(email) {
+  const result = await pool.query(
+    `UPDATE customers SET credits = credits - 1, updated_at = NOW()
+     WHERE email = $1 AND credits > 0
+     RETURNING credits`,
+    [email]
+  )
+  return result.rowCount > 0
 }
 
-function deductCredit(email) {
-  const store = loadCredits()
-  if (store[email] && store[email].credits > 0) {
-    store[email].credits--
-    saveCredits(store)
-    return true
-  }
-  return false
+async function resetMonthlyCredits(email) {
+  await pool.query(
+    `UPDATE customers SET credits = CASE WHEN plan = 'cohort' THEN 50 ELSE 10 END, updated_at = NOW()
+     WHERE email = $1`,
+    [email]
+  )
 }
 
-function resetMonthlyCredits(email) {
-  const store = loadCredits()
-  if (store[email]) {
-    store[email].credits = store[email].plan === 'cohort' ? 50 : 10
-    saveCredits(store)
-  }
-}
-
-function getCredits(email) {
-  const store = loadCredits()
-  return store[email]?.credits ?? 0
+async function getCredits(email) {
+  const result = await pool.query(
+    'SELECT credits FROM customers WHERE email = $1',
+    [email]
+  )
+  return result.rows[0]?.credits ?? 0
 }
 
 async function scrapeSinglePage(url) {
@@ -507,10 +526,10 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
     if (customerEmail && websiteUrl) {
       if (session.mode === 'subscription') {
-        const creds = getCredits(customerEmail)
+        const creds = await getCredits(customerEmail)
         if (creds > 0) {
           runPipeline(customerEmail, websiteUrl, competitorUrl, agencyName)
-          deductCredit(customerEmail)
+          await deductCredit(customerEmail)
           console.log(`Credit deducted for ${customerEmail}, ${creds - 1} remaining`)
         } else {
           console.log(`No credits remaining for ${customerEmail}`)
@@ -527,7 +546,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     if (invoice.billing_reason === 'subscription_cycle') {
       const email = invoice.customer_email || invoice.customer_details?.email
       if (email) {
-        resetMonthlyCredits(email)
+        await resetMonthlyCredits(email)
         console.log(`Monthly credits reset for ${email}`)
       }
     }
@@ -539,6 +558,11 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
 app.get('/health', (req, res) => res.send('Alvien pipeline live'))
 
-app.listen(process.env.PORT || 3000, () => {
+app.listen(process.env.PORT || 3000, async () => {
+  try {
+    await initDb()
+  } catch (err) {
+    console.error('Database init failed:', err.message)
+  }
   console.log('Alvien server running on port', process.env.PORT || 3000)
 })
