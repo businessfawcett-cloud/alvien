@@ -3,11 +3,52 @@ import express from 'express'
 import Stripe from 'stripe'
 import { Resend } from 'resend'
 import Groq from 'groq-sdk'
+import { readFileSync, writeFileSync, existsSync } from 'fs'
 
 const app = express()
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 const resend = new Resend(process.env.RESEND_API_KEY)
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+
+const CREDITS_FILE = './credits.json'
+
+function loadCredits() {
+  if (!existsSync(CREDITS_FILE)) return {}
+  return JSON.parse(readFileSync(CREDITS_FILE, 'utf-8'))
+}
+
+function saveCredits(store) {
+  writeFileSync(CREDITS_FILE, JSON.stringify(store, null, 2))
+}
+
+function assignCredits(email, plan, subscriptionId) {
+  const store = loadCredits()
+  store[email] = { credits: plan === 'cohort' ? 50 : 10, plan, subscriptionId }
+  saveCredits(store)
+}
+
+function deductCredit(email) {
+  const store = loadCredits()
+  if (store[email] && store[email].credits > 0) {
+    store[email].credits--
+    saveCredits(store)
+    return true
+  }
+  return false
+}
+
+function resetMonthlyCredits(email) {
+  const store = loadCredits()
+  if (store[email]) {
+    store[email].credits = store[email].plan === 'cohort' ? 50 : 10
+    saveCredits(store)
+  }
+}
+
+function getCredits(email) {
+  const store = loadCredits()
+  return store[email]?.credits ?? 0
+}
 
 async function scrapeSinglePage(url) {
   const controller = new AbortController()
@@ -442,28 +483,58 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     return res.status(400).send('Webhook Error')
   }
 
-  if (event.type !== 'checkout.session.completed') {
-    return res.status(200).send('Ignored')
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object
+    const customerEmail = session.customer_details.email
+    const customFields = session.custom_fields || []
+    let websiteUrl = customFields.find(f => f.key === 'website_url_to_audit')?.text?.value
+    if (websiteUrl && !websiteUrl.startsWith('http')) {
+      websiteUrl = 'https://' + websiteUrl
+    }
+    let competitorUrl = customFields.find(f => f.key === 'competitor_url')?.text?.value
+    if (competitorUrl && !competitorUrl.startsWith('http')) {
+      competitorUrl = 'https://' + competitorUrl
+    }
+    let agencyName = customFields.find(f => f.key === 'agency_name')?.text?.value
+
+    if (session.mode === 'subscription') {
+      const plan = session.amount_subtotal >= 50000 ? 'cohort' : 'agency'
+      assignCredits(customerEmail, plan, session.subscription)
+      console.log(`Assigned ${plan} credits to ${customerEmail}`)
+    }
+
+    res.status(200).send('OK')
+
+    if (customerEmail && websiteUrl) {
+      if (session.mode === 'subscription') {
+        const creds = getCredits(customerEmail)
+        if (creds > 0) {
+          runPipeline(customerEmail, websiteUrl, competitorUrl, agencyName)
+          deductCredit(customerEmail)
+          console.log(`Credit deducted for ${customerEmail}, ${creds - 1} remaining`)
+        } else {
+          console.log(`No credits remaining for ${customerEmail}`)
+        }
+      } else {
+        runPipeline(customerEmail, websiteUrl, competitorUrl, agencyName)
+      }
+    }
+    return
   }
 
-  const session = event.data.object
-  const customerEmail = session.customer_details.email
-  const customFields = session.custom_fields || []
-  let websiteUrl = customFields.find(f => f.key === 'website_url_to_audit')?.text?.value
-  if (websiteUrl && !websiteUrl.startsWith('http')) {
-    websiteUrl = 'https://' + websiteUrl
+  if (event.type === 'invoice.paid') {
+    const invoice = event.data.object
+    if (invoice.billing_reason === 'subscription_cycle') {
+      const email = invoice.customer_email || invoice.customer_details?.email
+      if (email) {
+        resetMonthlyCredits(email)
+        console.log(`Monthly credits reset for ${email}`)
+      }
+    }
+    return res.status(200).send('OK')
   }
-  let competitorUrl = customFields.find(f => f.key === 'competitor_url')?.text?.value
-  if (competitorUrl && !competitorUrl.startsWith('http')) {
-    competitorUrl = 'https://' + competitorUrl
-  }
-  let agencyName = customFields.find(f => f.key === 'agency_name')?.text?.value
 
-  res.status(200).send('OK')
-
-  if (customerEmail && websiteUrl) {
-    runPipeline(customerEmail, websiteUrl, competitorUrl, agencyName)
-  }
+  res.status(200).send('Ignored')
 })
 
 app.get('/health', (req, res) => res.send('Alvien pipeline live'))
