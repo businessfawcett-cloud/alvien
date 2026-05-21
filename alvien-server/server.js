@@ -4,6 +4,8 @@ import Stripe from 'stripe'
 import { Resend } from 'resend'
 import Groq from 'groq-sdk'
 import pg from 'pg'
+import { Queue, Worker } from 'bullmq'
+import IORedis from 'ioredis'
 
 const app = express()
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
@@ -67,6 +69,37 @@ async function getCredits(email) {
     [email]
   )
   return result.rows[0]?.credits ?? 0
+}
+
+let pipelineQueue = null
+
+function setupQueue() {
+  if (!process.env.REDIS_URL) {
+    console.log('REDIS_URL not set — running pipelines directly (jobs lost on restart)')
+    return
+  }
+  const connection = new IORedis(process.env.REDIS_URL, { maxRetriesPerRequest: null })
+  pipelineQueue = new Queue('pipeline', { connection })
+  const worker = new Worker('pipeline', async job => {
+    const { customerEmail, websiteUrl, competitorUrl, agencyName } = job.data
+    await runPipeline(customerEmail, websiteUrl, competitorUrl, agencyName)
+  }, { connection })
+  worker.on('completed', async job => {
+    await deductCredit(job.data.customerEmail)
+    console.log(`Job ${job.id} done, credit deducted for ${job.data.customerEmail}`)
+  })
+  worker.on('failed', (job, err) => {
+    console.error(`Job ${job.id} failed: ${err.message}`)
+  })
+  console.log('BullMQ queue and worker initialized')
+}
+
+function enqueuePipeline(customerEmail, websiteUrl, competitorUrl, agencyName) {
+  if (pipelineQueue) {
+    pipelineQueue.add('pipeline-run', { customerEmail, websiteUrl, competitorUrl, agencyName })
+    return
+  }
+  runPipeline(customerEmail, websiteUrl, competitorUrl, agencyName)
 }
 
 async function scrapeSinglePage(url) {
@@ -543,9 +576,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       if (session.mode === 'subscription') {
         const creds = await getCredits(customerEmail)
         if (creds > 0) {
-          runPipeline(customerEmail, websiteUrl, competitorUrl, agencyName)
-          await deductCredit(customerEmail)
-          console.log(`Credit deducted for ${customerEmail}, ${creds - 1} remaining`)
+          enqueuePipeline(customerEmail, websiteUrl, competitorUrl, agencyName)
         } else {
           try {
             await resend.emails.send({
@@ -563,7 +594,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
           }
         }
       } else {
-        runPipeline(customerEmail, websiteUrl, competitorUrl, agencyName)
+        enqueuePipeline(customerEmail, websiteUrl, competitorUrl, agencyName)
       }
     }
     return
@@ -595,6 +626,7 @@ app.get('/health', async (req, res) => {
 
 async function start() {
   try {
+    setupQueue()
     await initDb()
     app.listen(process.env.PORT || 3000, () => {
       console.log('Alvien server running on port', process.env.PORT || 3000)
