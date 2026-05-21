@@ -137,6 +137,113 @@
 
     .btn:hover { background: var(--accent); color: var(--bg); opacity: 1; }
 
+    /* ---- Sample Report ---- */
+    .sample-report {
+      padding: 120px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .sample-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .sample-left .section-label {
+      margin-bottom: 20px;
+    }
+
+    .sample-left h2 {
+      font-size: 2rem;
+      margin-bottom: 16px;
+    }
+
+    .sample-left p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 32px;
+      max-width: 460px;
+    }
+
+    .sample-preview {
+      background: #1a1a1a;
+      border: 1px solid rgba(201, 168, 76, 0.35);
+      padding: 32px;
+      position: relative;
+    }
+
+    .sample-preview .sample-line {
+      height: 4px;
+      background: #C9A84C;
+      width: 32px;
+      margin-bottom: 24px;
+    }
+
+    .sample-preview .sample-pill {
+      display: inline-block;
+      font-size: 0.6rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #C9A84C;
+      border: 1px solid rgba(201, 168, 76, 0.3);
+      padding: 4px 12px;
+      margin-bottom: 16px;
+    }
+
+    .sample-preview .sample-block {
+      height: 12px;
+      background: rgba(245, 244, 240, 0.08);
+      margin-bottom: 8px;
+      border-radius: 2px;
+    }
+
+    .sample-preview .sample-block.wide { width: 100%; }
+    .sample-preview .sample-block.med { width: 75%; }
+    .sample-preview .sample-block.narrow { width: 55%; }
+
+    .sample-preview .sample-rule {
+      height: 1px;
+      background: rgba(201, 168, 76, 0.2);
+      margin: 20px 0;
+    }
+
+    .sample-preview .sample-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 16px 0;
+    }
+
+    .sample-preview .sample-label {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: rgba(201, 168, 76, 0.7);
+      margin-bottom: 4px;
+    }
+
+    .sample-preview .sample-text {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .sample-preview .sample-badge {
+      position: absolute;
+      top: -12px;
+      right: 24px;
+      background: var(--bg);
+      color: var(--accent);
+      font-size: 0.55rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      padding: 4px 12px;
+      border: 1px solid var(--accent);
+    }
+
     /* ---- Capabilities ---- */
     .capabilities {
       padding: 100px 0 120px;
@@ -433,6 +540,8 @@
       nav .container { flex-direction: column; align-items: flex-start; gap: 16px; }
       .nav-links { gap: 24px; }
       .pull-quote blockquote { font-size: 1.5rem; }
+      .sample-layout { grid-template-columns: 1fr; gap: 48px; }
+      .sample-left h2 { font-size: 1.75rem; }
       .agencies-layout { grid-template-columns: 1fr; gap: 48px; }
       .agencies-left h2 { font-size: 1.75rem; }
       footer .container { flex-direction: column; gap: 16px; align-items: flex-start; }
@@ -468,6 +577,46 @@
       <div class="hero-rule"></div>
       <p>Alvien crawls your site, argues both sides, and delivers a consulting-grade report that survives scrutiny.</p>
       <a href="https://buy.stripe.com/test_28EcN7eabg8neMj9bMgA800" class="btn">Run Your First Report</a>
+    </div>
+  </section>
+
+  <section class="sample-report">
+    <div class="container">
+      <div class="sample-layout">
+        <div class="sample-left">
+          <div class="section-label">Sample Report</div>
+          <h2>See exactly what you get.</h2>
+          <p>A real YC-style pressure test on a real company. Full verdict, risk breakdown, debate transcript. No surprises.</p>
+          <a href="sample-report.html" class="btn" target="_blank">View Sample Report</a>
+        </div>
+        <div class="sample-preview">
+          <span class="sample-badge">Linear.app</span>
+          <div class="sample-line"></div>
+          <div class="sample-pill">Executive Summary</div>
+          <div class="sample-block wide"></div>
+          <div class="sample-block med"></div>
+          <div class="sample-block narrow"></div>
+          <div class="sample-rule"></div>
+          <div class="sample-grid">
+            <div>
+              <div class="sample-label">Demand Risk</div>
+              <div class="sample-text">How much real demand exists beyond claimed traction?</div>
+            </div>
+            <div>
+              <div class="sample-label">Wedge Risk</div>
+              <div class="sample-text">Is the specific user and smallest offer clear?</div>
+            </div>
+            <div>
+              <div class="sample-label">Status Quo Risk</div>
+              <div class="sample-text">Is the problem painful enough to act on?</div>
+            </div>
+            <div>
+              <div class="sample-label">Differentiation</div>
+              <div class="sample-text">How does it differ from the real alternative?</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
