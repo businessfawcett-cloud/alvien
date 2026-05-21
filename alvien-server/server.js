@@ -532,7 +532,20 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
           await deductCredit(customerEmail)
           console.log(`Credit deducted for ${customerEmail}, ${creds - 1} remaining`)
         } else {
-          console.log(`No credits remaining for ${customerEmail}`)
+          try {
+            await resend.emails.send({
+              from: process.env.RESEND_FROM_EMAIL,
+              to: customerEmail,
+              subject: 'You\'ve used all your Alvien reports for this month',
+              html: `<div style="background:#0D0D0D;padding:40px 16px">
+<div style="max-width:600px;margin:0 auto;font-family:Georgia,serif;color:#e0e0e0">
+<p style="font-size:20px;color:#C9A84C;letter-spacing:0.1em;margin-bottom:4px">ALVIEN — NO CREDITS LEFT</p>
+<p style="font-size:14px;line-height:1.7;color:#e0e0e0;margin-bottom:24px">You've used all your monthly reports. Your credits will reset on your next billing date.</p>
+</div></div>`
+            })
+          } catch (emailErr) {
+            console.error('Failed to send out-of-credits email:', emailErr)
+          }
         }
       } else {
         runPipeline(customerEmail, websiteUrl, competitorUrl, agencyName)
@@ -556,13 +569,25 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   res.status(200).send('Ignored')
 })
 
-app.get('/health', (req, res) => res.send('Alvien pipeline live'))
+app.get('/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1')
+    res.send('Alvien pipeline live')
+  } catch {
+    res.status(503).send('Database unavailable')
+  }
+})
 
-app.listen(process.env.PORT || 3000, async () => {
+async function start() {
   try {
     await initDb()
+    app.listen(process.env.PORT || 3000, () => {
+      console.log('Alvien server running on port', process.env.PORT || 3000)
+    })
   } catch (err) {
-    console.error('Database init failed:', err.message)
+    console.error('Failed to start server:', err.message)
+    process.exit(1)
   }
-  console.log('Alvien server running on port', process.env.PORT || 3000)
-})
+}
+
+start()
