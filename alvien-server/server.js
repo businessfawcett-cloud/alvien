@@ -460,22 +460,37 @@ function validateUrl(raw) {
   return url
 }
 
+async function retryWithBackoff(fn, maxAttempts = 3) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn()
+    } catch (err) {
+      if (attempt === maxAttempts) throw err
+      const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000)
+      console.warn(`Attempt ${attempt}/${maxAttempts} failed, retrying in ${delay}ms:`, err.message)
+      await new Promise(r => setTimeout(r, delay))
+    }
+  }
+}
+
 async function runPipeline(customerEmail, websiteUrl, competitorUrl, agencyName) {
   try {
-    websiteUrl = validateUrl(websiteUrl)
-    if (competitorUrl) competitorUrl = validateUrl(competitorUrl)
-    console.log(`Starting pipeline for ${customerEmail} — ${websiteUrl}`)
-    const [siteContent, competitorContent] = await Promise.all([
-      scrapePages(websiteUrl),
-      competitorUrl ? scrapeSinglePage(competitorUrl) : Promise.resolve(null)
-    ])
-    console.log('Scrape complete' + (competitorContent ? ' (with competitor)' : ''))
-    const debate = await runDebate(siteContent, websiteUrl, competitorContent)
-    console.log('Debate complete')
-    await sendReport(customerEmail, debate, websiteUrl, agencyName)
-    console.log('Report sent to', customerEmail)
+    await retryWithBackoff(async () => {
+      websiteUrl = validateUrl(websiteUrl)
+      if (competitorUrl) competitorUrl = validateUrl(competitorUrl)
+      console.log(`Starting pipeline for ${customerEmail} — ${websiteUrl}`)
+      const [siteContent, competitorContent] = await Promise.all([
+        scrapePages(websiteUrl),
+        competitorUrl ? scrapeSinglePage(competitorUrl) : Promise.resolve(null)
+      ])
+      console.log('Scrape complete' + (competitorContent ? ' (with competitor)' : ''))
+      const debate = await runDebate(siteContent, websiteUrl, competitorContent)
+      console.log('Debate complete')
+      await sendReport(customerEmail, debate, websiteUrl, agencyName)
+      console.log('Report sent to', customerEmail)
+    }, 3)
   } catch (err) {
-    console.error('Pipeline failed:', err)
+    console.error('Pipeline failed after 3 attempts:', err)
     try {
       await resend.emails.send({
         from: process.env.RESEND_FROM_EMAIL,
