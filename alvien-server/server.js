@@ -624,6 +624,9 @@ app.get('/health', async (req, res) => {
   }
 })
 
+app.use(express.static('public'))
+app.get('*', (req, res) => res.sendFile('index.html', { root: 'public' }))
+
 async function start() {
   try {
     setupQueue()
